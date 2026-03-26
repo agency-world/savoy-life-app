@@ -1,115 +1,160 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
+import plotly.express as px
 import random
 import time
 from datetime import datetime, timedelta
+from PIL import Image
+import io
 
-# --- CONFIG & THEME ---
-st.set_page_config(page_title="Savoy Nexus v4", layout="wide")
+# --- CONFIG & MODERN THEME ---
+st.set_page_config(page_title="Savoy Nexus v5", layout="wide", page_icon="🧬")
 st.markdown("""
     <style>
     .main { background-color: #f8fafc; }
-    .agent-box { background: #0f172a; color: #38bdf8; font-family: 'Courier New'; padding: 15px; border-radius: 10px; font-size: 0.85rem; }
-    .wellness-card { background: white; padding: 25px; border-radius: 20px; text-align: center; border: 1px solid #e2e8f0; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
-    .handoff-box { background: #eff6ff; border-left: 5px solid #3b82f6; padding: 20px; border-radius: 10px; font-style: italic; }
+    .stChatMessage { border-radius: 15px; padding: 10px; margin-bottom: 10px; }
+    .agent-status { font-family: 'Courier New'; background: #111827; color: #10b981; padding: 10px; border-radius: 8px; font-size: 0.8rem; border-left: 4px solid #3b82f6; }
+    .dashboard-card { background: white; padding: 20px; border-radius: 15px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
     </style>
     """, unsafe_allow_html=True)
 
-# --- SYNTHETIC DATA ENGINE ---
-def generate_market_data():
-    residents = [
-        {"id": "MC402", "name": "Margaret Chen", "age": 84, "meds": ["Furosemide", "Lisinopril"], "poa": "Jane Chen", "social_baseline": 4.5},
-        {"id": "AM112", "name": "Arthur Miller", "age": 89, "meds": ["Donepezil", "Metformin"], "poa": "Robert Miller", "social_baseline": 2.2}
-    ]
-    times = [datetime.now() - timedelta(hours=x) for x in range(24)]
-    sensors = pd.DataFrame({
-        "Time": times,
-        "Heart_Rate": [random.randint(72, 88) for _ in range(24)],
-        "Social_Engagement": [random.uniform(0, 1.2) for _ in range(24)], # Hrs out of room
-        "Mobility_Index": [random.randint(40, 95) for _ in range(24)]
+# --- SYNTHETIC DATA & SIMULATED AI MODELS ---
+def generate_lab_data():
+    return pd.DataFrame({
+        "Date": pd.date_range(start="2024-01-01", periods=10),
+        "TAT (Hours)": [4.2, 3.8, 5.1, 2.9, 3.5, 4.0, 3.2, 4.8, 3.1, 2.5],
+        "Positivity_Rate": [0.12, 0.08, 0.15, 0.05, 0.07, 0.10, 0.09, 0.11, 0.06, 0.04],
+        "Specimens": [120, 145, 110, 160, 130, 125, 140, 115, 150, 170]
     })
-    return residents, sensors
 
-RESIDENTS, SENSORS = generate_market_data()
+# --- MULTI-AGENT ORCHESTRATOR LOGIC ---
+class SavoyNexusAgents:
+    @staticmethod
+    def ocr_processor(file_bytes):
+        # Simulated OCR Logic
+        time.sleep(1.5)
+        return {
+            "Patient": "Margaret Chen",
+            "DOB": "05/12/1940",
+            "Form_Type": "Laboratory Order",
+            "Tests_Requested": "CBC, CMP, UA",
+            "Confidence": "98.4%"
+        }
 
-# --- SIDEBAR & PERSONA ROUTING ---
+    @staticmethod
+    def vision_diagnostics(img):
+        # Simulated Vision Logic
+        time.sleep(2)
+        return "**Vision Agent Result:** Pressure Ulcer Staging: Stage 2 detected (Sacrum). No signs of infection. Recommendation: Reposition every 2h and apply hydrocolloid dressing."
+
+    @staticmethod
+    def audio_diagnostics(audio_file):
+        # Simulated Audio Logic
+        time.sleep(2)
+        return "**Audio Agent Result:** Bioacoustic signature shows 14 coughs/hr. Type: Productive. Frequency: Increasing vs 24h baseline. Risk of Pneumonia elevated (72%)."
+
+# --- SIDEBAR: PERSONA & NAVIGATION ---
 with st.sidebar:
-    st.image("https://img.icons8.com/fluency/96/artificial-intelligence.png", width=60)
-    st.title("Savoy Nexus v4")
-    persona = st.selectbox("Switch Workspace", ["CareGiver (Shift View)", "POA (Family Portal)", "Executive (Facility Admin)"])
+    st.image("https://img.icons8.com/fluency/96/dna-helix.png", width=70)
+    st.title("Savoy Nexus v5")
+    persona = st.selectbox("Switch Workspace", 
+        ["Lab Admin", "Facility Executive", "CareGiver (Diagnostics)", "POA (Wellness)"])
     st.divider()
-    st.metric("Admin Burden Reduced", "142 mins", "Today", delta_color="normal")
-    st.success("QHIN Pipeline: Active")
-    st.info("Agent Swarm: 4 Bots Online")
+    st.info(f"Identity: {persona}")
+    st.success("Agent Swarm: Fully Synchronized")
 
-# --- AGENTIC ORCHESTRATION ---
-def run_agent_swarm(persona_type):
-    logs = [
-        "Synthesizer: Merging Sensor_ID_402 with EHR_Med_History...",
-        "Clinical_Reasoner: High Nocturia correlated with new Diuretic (82% confidence)",
-        "Social_Analyst: Detected 25% drop in communal dining participation",
-        f"Architect: Formatting output for {persona_type}..."
-    ]
-    return logs
+# --- MAIN APP ROUTING ---
+tabs = st.tabs(["📊 Analytics Dashboard", "💬 Nexus Chat (Docs)", "🩺 AI Diagnostics Lab", "📂 Administrative OCR"])
 
-# --- MAIN INTERFACE ---
-st.title(f"📍 {persona} Command Center")
-
-if persona == "CareGiver (Shift View)":
-    col1, col2 = st.columns([2, 1])
+# --- TAB 1: ANALYTICS DASHBOARD ---
+with tabs[0]:
+    st.header(f"🧬 {persona} Intelligence Dashboard")
+    df = generate_lab_data()
+    
+    col1, col2, col3 = st.columns(3)
     with col1:
-        st.subheader("📋 Virtual Rounding & AI Handoff")
-        res = RESIDENTS[0]
-        st.markdown("**AI-Generated Shift Summary (Handoff Bot):**")
-        st.markdown(f"""<div class="handoff-box">
-            "Margaret had a restless night (3 bathroom trips). Vitals remain stable, but her morning mobility is sluggish. 
-            <b>SDoH Alert:</b> She skipped breakfast in the hall. Suggest 1:1 interaction during lunch pass."
-            </div>""", unsafe_allow_html=True)
-        
-        st.divider()
-        st.subheader("Ambient Clinical Notes")
-        note = st.text_area("Dictate or type observation:", "Margaret seems withdrawn and tired. Refused walk.")
-        if st.button("Sync to Care Plan"):
-            st.success("Note Analyzed: Added 'Social Withdrawal' and 'Fatigue' to Clinical Dashboard.")
-
+        st.metric("Avg Turnaround Time", "3.2 hrs", "-12%")
     with col2:
-        st.subheader("Agent Swarm Logs")
-        st.markdown(f'<div class="agent-log">{"<br>".join(run_agent_swarm("Nurse"))}</div>', unsafe_allow_html=True)
-        st.divider()
-        st.write("### Care Tasks")
-        st.checkbox("Check Orthostatic BP", value=False)
-        st.checkbox("Medication Pass: Complete", value=True)
+        st.metric("Critical Alerts", "5", "+1 Today", delta_color="inverse")
+    with col3:
+        st.metric("Specimen Volume", "1,240", "+8%")
 
-elif persona == "POA (Family Portal)":
-    res = RESIDENTS[0]
-    st.header(f"Wellness for {res['name']}")
-    
-    col_a, col_b = st.columns([1, 2])
-    with col_a:
-        st.markdown(f"""<div class="wellness-card">
-            <p style="color: #64748b; font-weight: bold;">OVERALL WELLNESS</p>
-            <h1 style="color: #3b82f6; font-size: 4rem; margin: 0;">82</h1>
-            <p style="color: #10b981;">Target: 85+</p>
-            </div>""", unsafe_allow_html=True)
-    
-    with col_b:
-        st.subheader("Discovery Bot: Wellness FAQ")
-        q = st.text_input("Ask about Margaret's day:", "Is she eating well?")
-        if q:
-            st.info("Margaret enjoyed her lunch but skipped breakfast today. Her care team is monitoring her hydration.")
-    
-    st.divider()
-    st.subheader("Legal & POA Vault")
-    st.write(f"Authorized POA: **{res['poa']}**")
-    st.button("Review Medical Power of Attorney Documents")
+    c1, c2 = st.columns(2)
+    with c1:
+        fig_tat = px.line(df, x="Date", y="TAT (Hours)", title="Lab Result Turnaround Trend", template="plotly_white")
+        st.plotly_chart(fig_tat, use_container_width=True)
+    with c2:
+        fig_pos = px.bar(df, x="Date", y="Positivity_Rate", title="Infection Positivity Rate", color="Positivity_Rate", template="plotly_white")
+        st.plotly_chart(fig_pos, use_container_width=True)
 
-else: # Executive Admin
-    st.subheader("Facility Efficiency & Risk Heatmap")
-    st.metric("ER Transfer Avoidance", "$18,400", "This Month")
-    st.bar_chart(SENSORS.set_index("Time")["Mobility_Index"])
-    st.error("High Risk: Margaret Chen (Room 402) - 88% probability of fall within 48h.")
+# --- TAB 2: NEXUS CHAT (RAG & DOCS) ---
+with tabs[1]:
+    st.header("💬 Nexus Multi-Modal Chat")
+    st.caption("Chat with PDFs, EHR records, and images.")
+    
+    if "messages" not in st.session_state:
+        st.session_state.messages = [{"role": "assistant", "content": "Hello! I am Nexus. Upload a document or image to start analyzing."}]
 
-# --- FOOTER ---
+    uploaded_doc = st.file_uploader("Upload Document (PDF/TXT) for RAG", type=["pdf", "txt"])
+    
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+
+    if prompt := st.chat_input("Ask about Margaret's recent labs..."):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        
+        with st.chat_message("assistant"):
+            with st.spinner("Retrieving information..."):
+                time.sleep(1)
+                response = f"Based on the uploaded document, Margaret's CBC shows a slightly elevated WBC of 11.2k. This aligns with the 'Clinical Reasoner' agent's suspicion of a UTI."
+                st.markdown(response)
+                st.session_state.messages.append({"role": "assistant", "content": response})
+
+# --- TAB 3: AI DIAGNOSTICS LAB (VISION/AUDIO) ---
+with tabs[2]:
+    st.header("🩺 Patient Multimodal AI")
+    st.info("Direct integration for Lab Admins to analyze clinical images and patient bioacoustics.")
+    
+    c1, c2 = st.columns(2)
+    with c1:
+        st.subheader("🖼️ Wound/Skin Vision")
+        img_file = st.file_uploader("Upload Wound Photo", type=["jpg", "png"])
+        if img_file:
+            st.image(img_file, width=300)
+            if st.button("Run Vision Diagnostics"):
+                st.markdown(SavoyNexusAgents.vision_diagnostics(img_file))
+                
+    with c2:
+        st.subheader("🔊 Respiratory Audio Analysis")
+        audio_file = st.file_uploader("Upload Lung Sounds / Cough Recording", type=["mp3", "wav"])
+        if audio_file:
+            st.audio(audio_file)
+            if st.button("Run Audio Bioacoustics"):
+                st.markdown(SavoyNexusAgents.audio_diagnostics(audio_file))
+
+# --- TAB 4: ADMINISTRATIVE OCR ---
+with tabs[3]:
+    st.header("📂 Admin Form Digitizer")
+    st.caption("Extract structured data from paper orders, lab reports, and invoices.")
+    
+    admin_doc = st.file_uploader("Upload Admin Form (Image/PDF)", type=["jpg", "pdf"])
+    if admin_doc:
+        st.image(admin_doc, width=250)
+        if st.button("Digitize Form"):
+            result = SavoyNexusAgents.ocr_processor(admin_doc)
+            st.json(result)
+            st.success("Data successfully extracted and mapped to HL7 v2.5 / FHIR.")
+
+# --- FOOTER: AGENT LOGS ---
 st.divider()
-st.caption("Savoy Nexus // Founding Technical Strategy Prototype v4 // HIPAA-Safe Simulated Environment")
+st.subheader("⚙️ Multi-Agent Orchestration Stream")
+logs = [
+    f"[{datetime.now().strftime('%H:%M:%S')}] OCR_Agent: Handing off extracted entities to Billing_Bot",
+    f"[{datetime.now().strftime('%H:%M:%S')}] Vision_Agent: Notifying Nurse of Stage 2 Wound alert",
+    f"[{datetime.now().strftime('%H:%M:%S')}] RAG_Agent: Indexing new PDF chunk for resident MC-402",
+    f"[{datetime.now().strftime('%H:%M:%S')}] Lab_Orchestrator: Updating Executive Dashboard with new TAT data"
+]
+st.markdown(f'<div class="agent-status">{"<br>".join(logs)}</div>', unsafe_allow_html=True)
